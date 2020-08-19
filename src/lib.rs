@@ -34,7 +34,7 @@ pub fn helloworld() -> String {
 }
 
 #[wasm_bindgen]
-pub fn render_func(width: usize, height: usize) -> Vec<u8> {
+pub fn render_func(width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) -> Vec<u8> {
     let xmax = width;
     let ymax = height;
     let xfov = 1.;
@@ -130,8 +130,18 @@ pub fn render_func(width: usize, height: usize) -> Vec<u8> {
     };
 
     let mut ren: RenderEnv = RenderEnv::new(
-        Vec3::new(0., -150., -300.), /* cam */
-        Vec3::new(0., -PI / 2., -PI / 2.), /* pyr */
+        if 3 == pos.len() {
+            Vec3::new(pos[0], pos[1], pos[2])
+        }
+        else {
+            Vec3::new(0., -150., -300.)
+        }, /* cam */
+        if 3 == pyr.len() {
+            Vec3::new(pyr[0], pyr[1], pyr[2])
+        }
+        else {
+            Vec3::new(0., -PI / 2., -PI / 2.)
+        }, /* pyr */
         xmax as i32,
         ymax as i32, /* xres, yres */
         xfov,
