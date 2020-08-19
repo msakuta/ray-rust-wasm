@@ -2,6 +2,9 @@
 
 Webassembly port of [ray-rust](https://github.com/msakuta/ray-rust) project.
 
+Try it now with your browser!
+
+https://msakuta.github.io/ray-rust-wasm/
 
 ## How to build and run
 
