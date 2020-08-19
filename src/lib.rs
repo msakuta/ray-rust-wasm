@@ -38,7 +38,7 @@ pub fn render_func(width: usize, height: usize) -> Vec<u8> {
     let xmax = width;
     let ymax = height;
     let xfov = 1.;
-    let yfov = 1.;
+    let yfov = ymax as f32 / xmax as f32;
     let thread_count = 1;
     use std::f32::consts::PI;
 
