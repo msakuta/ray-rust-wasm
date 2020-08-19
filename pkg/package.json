@@ -1,0 +1,15 @@
+{
+  "name": "helloworld",
+  "collaborators": [
+    "Masahiro <masahiro.sakuta@zmp.co.jp>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "helloworld_bg.wasm",
+    "helloworld.js",
+    "helloworld.d.ts"
+  ],
+  "module": "helloworld.js",
+  "types": "helloworld.d.ts",
+  "sideEffects": false
+}
