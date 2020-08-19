@@ -53,25 +53,36 @@ pub fn fibonacci(n: u32) -> u32 {
 }
 
 #[wasm_bindgen]
-pub fn render_func() -> Vec<u8> {
-    let xmax = 320;
-    let ymax = 240;
+pub fn render_func(width: usize, height: usize) -> Vec<u8> {
+    let xmax = width;
+    let ymax = height;
     let xfov = 1.;
     let yfov = 1.;
-    let width= xmax;
-    let height = ymax;
     let thread_count = 1;
     use std::f32::consts::PI;
 
     let mut materials: HashMap<String, Arc<RenderMaterial>> = HashMap::new();
 
     let floor_material = Arc::new(RenderMaterial::new("floor".to_string(),
-    RenderColor::new(1.0, 1.0, 0.0), RenderColor::new(0.0, 0.0, 0.0),  0, 0., 0.0)
-    .pattern(RenderPattern::RepeatedGradation)
-    .pattern_scale(300.)
-    .pattern_angle_scale(0.2)
-    .texture_ok("bar.png"));
+        RenderColor::new(1.0, 1.0, 0.0), RenderColor::new(0.0, 0.0, 0.0),  0, 0., 0.0)
+        .pattern(RenderPattern::RepeatedGradation)
+        .pattern_scale(300.)
+        .pattern_angle_scale(0.2)
+        .texture_ok("bar.png"));
     materials.insert("floor".to_string(), floor_material);
+
+    let mirror_material = Arc::new(RenderMaterial::new("mirror".to_string(),
+        RenderColor::new(0.0, 0.0, 0.0), RenderColor::new(1.0, 1.0, 1.0), 24, 0., 0.0)
+        .frac(RenderColor::new(1., 1., 1.)));
+
+    let red_material = Arc::new(RenderMaterial::new("red".to_string(),
+        RenderColor::new(0.8, 0.0, 0.0), RenderColor::new(0.0, 0.0, 0.0), 24, 0., 0.0)
+        .glow_dist(5.));
+
+    let transparent_material = Arc::new(RenderMaterial::new("transparent".to_string(),
+        RenderColor::new(0.0, 0.0, 0.0), RenderColor::new(0.0, 0.0, 0.0),  0, 1., 1.5)
+        .frac(RenderColor::new(1.49998, 1.49999, 1.5)));
+
 
     let objects: Vec<RenderObject> = vec!{
         /* Plane */
@@ -81,11 +92,11 @@ pub fn render_func() -> Vec<u8> {
             ),
             // RenderFloor::new (floor_material,       Vec3::new(-300.0,   0.0,  0.0),  Vec3::new(1., 0., 0.)),
         /* Spheres */
-        //     RenderSphere::new(mirror_material.clone(), 80.0, Vec3::new(   0.0, -30.0,172.0)),
-        //     RenderSphere::new(mirror_material, 80.0, Vec3::new(   -200.0, -30.0,172.0)),
-        //     RenderSphere::new(red_material, 80.0, Vec3::new(-200.0,-200.0,172.0)),
+            RenderSphere::new(mirror_material.clone(), 80.0, Vec3::new(   0.0, -30.0,172.0)),
+            RenderSphere::new(mirror_material, 80.0, Vec3::new(   -200.0, -30.0,172.0)),
+            RenderSphere::new(red_material, 80.0, Vec3::new(-200.0,-200.0,172.0)),
         // /*	{80.0F,  70.0F,-200.0F,150.0F, 0.0F, 0.0F, 0.8F, 0.0F, 0.0F, 0.0F, 0.0F,24, 1., 1., {1.}},*/
-        //     RenderSphere::new(transparent_material, 100.0, Vec3::new(  70.0,-200.0,150.0)),
+            RenderSphere::new(transparent_material, 100.0, Vec3::new(  70.0,-200.0,150.0)),
         /*	{000.F, 0.F, 0.F, 1500.F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F,24, 0, 0},*/
         /*	{100.F, -70.F, -150.F, 160.F, 0.0F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,24, .5F, .2F},*/
         };

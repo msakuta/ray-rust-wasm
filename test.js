@@ -17,15 +17,17 @@ async function run() {
   const fibJS = fibonacciInJs(num)
   console.timeEnd('Fibonnaci in JS')
 
-  console.time('Fibonnaci in JS')
-  const buf = render_func()
-  console.timeEnd('Fibonnaci in JS')
+  const canvas = document.getElementById('canvas');
+  const canvasSize = canvas.getBoundingClientRect();
+
+  console.time('Rendering in Rust')
+  const buf = render_func(canvasSize.width, canvasSize.height);
+  console.timeEnd('Rendering in Rust')
 
   console.log(buf)
 
-  const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const imageData = ctx.createImageData(320, 240);
+    const imageData = ctx.createImageData(canvasSize.width, canvasSize.height);
 
     // Iterate through every pixel
     for (let i = 0; i < imageData.data.length; i += 1) {
