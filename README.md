@@ -25,7 +25,7 @@ Browse http://localhost:5000/
 
 ## Screenshots
 
-![screenhot](images/screenshot00.jpg)
+![screenshot](images/screenshot00.jpg)
 
 ## The tutorial that I used
 
