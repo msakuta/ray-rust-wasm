@@ -34,25 +34,6 @@ pub fn helloworld() -> String {
 }
 
 #[wasm_bindgen]
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
-
-#[wasm_bindgen]
-pub fn example() {
-    log("Log from Rust!!!");
-}
-
-
-#[wasm_bindgen]
-pub fn fibonacci(n: u32) -> u32 {
-    match n {
-        0 | 1 => n,
-        _ => fibonacci(n - 1) + fibonacci(n - 2),
-    }
-}
-
-#[wasm_bindgen]
 pub fn render_func(width: usize, height: usize) -> Vec<u8> {
     let xmax = width;
     let ymax = height;
