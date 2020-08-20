@@ -21,6 +21,10 @@ Build the project
 
     wasm-pack build --target web
 
+Serve the web server
+
+    npx serve .
+
 Browse http://localhost:5000/
 
 ## Screenshots
