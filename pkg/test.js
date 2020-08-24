@@ -1,4 +1,4 @@
-import init, { render_func } from './pkg/helloworld.js'
+import init, { render_func } from './helloworld.js'
 
 async function run() {
   await init()
