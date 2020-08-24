@@ -4,8 +4,6 @@ name: Rust-wasm-deploy
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -26,12 +24,12 @@ jobs:
       run: wasm-pack build --target web
     - name: WASM Github Pages Generate
       uses: acblog/wasm-ghpages-generate-action@v0.0.2
-      #with:
+      with:
         # Folder path in domain, ends with '/', default to '/'.
         #domain: # optional, default is /
         # Segment count in domain, default to '0'.
         #segmentCount: # optional, default is 0
         # App directory with settings files, not endswith '/', default to './app'.
-        #app: # optional, default is ./app
+        app: ./ # optional, default is ./app
         # Dist directory, not endswith '/', default to './dist'.
         #dist: # optional, default is ./dist

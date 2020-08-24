@@ -16,8 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install wasm-pack
-      run: cargo install wasm-pack
+    - name: wasm-pack-action
+      uses: jetli/wasm-pack-action@v0.3.0
+      #with:
+        # Optional version of wasm-pack to install (eg. "v0.9.1", "latest")
+        #version: # optional, default is latest
     - name: Build
       run: wasm-pack build --target web
     - name: Run tests
