@@ -1,3 +1,5 @@
+![Rust-wasm](https://github.com/msakuta/ray-rust-wasm/workflows/Rust-wasm/badge.svg)
+
 # ray-rust-wasm
 
 Webassembly port of [ray-rust](https://github.com/msakuta/ray-rust) project.
