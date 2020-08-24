@@ -1,7 +1,9 @@
-import init, { render_func } from './pkg/helloworld.js'
+import init, { render_func, fill_text } from './pkg/helloworld.js'
 
 async function run() {
   await init()
+
+  fill_text();
 
   const canvas = document.getElementById('canvas');
   const canvasSize = canvas.getBoundingClientRect();

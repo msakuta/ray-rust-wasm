@@ -34,6 +34,28 @@ pub fn helloworld() -> String {
 }
 
 #[wasm_bindgen]
+pub fn fill_text() -> Result<(), JsValue>{
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let body = document.body().expect("document should have a body");
+
+    let mut iter = 0;
+    'escape: loop{
+        for iter2 in 0..10 {
+            let val = document.create_element("p")?;
+            val.set_inner_html(&format!("Hello from Rust! {} {}", iter, iter2));
+            body.append_child(&val)?;
+            iter += iter2;
+            if 100 < iter {
+                break 'escape;
+            }
+        }
+    };
+
+    Ok(())
+}
+
+#[wasm_bindgen]
 pub fn render_func(width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) -> Vec<u8> {
     let xmax = width;
     let ymax = height;
