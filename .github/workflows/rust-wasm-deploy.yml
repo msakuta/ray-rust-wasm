@@ -21,7 +21,9 @@ jobs:
         # Optional version of wasm-pack to install (eg. "v0.9.1", "latest")
         #version: # optional, default is latest
     - name: Build
-      run: wasm-pack build --target web
+      run:
+        wasm-pack build --target web &&
+        rm pkg/.gitignore # We don't want to ignore the products
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
