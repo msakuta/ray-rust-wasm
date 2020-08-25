@@ -22,7 +22,7 @@ async function run() {
     console.timeEnd('Rendering in Rust')
 
       // Iterate through every pixel
-    for (let i = 0; i < imageData.data.length; i += 1) {
+    for (let i = 0; i < imageData.data.length / 4; i += 1) {
       // Modify pixel data
       imageData.data[4 * i + 0] = buf[3 * i + 0];  // R value
       imageData.data[4 * i + 1] = buf[3 * i + 1];    // G value
