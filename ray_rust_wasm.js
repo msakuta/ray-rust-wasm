@@ -175,7 +175,7 @@ async function init(input) {
     }
     const imports = {};
     imports.wbg = {};
-    imports.wbg.__wbg_log_592cc817529d8489 = function(arg0, arg1) {
+    imports.wbg.__wbg_log_98b9909b79dfd4ee = function(arg0, arg1) {
         console.log(getStringFromWasm0(arg0, arg1));
     };
     imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
