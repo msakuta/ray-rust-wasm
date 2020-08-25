@@ -1,6 +1,26 @@
 
 let wasm;
 
+const heap = new Array(32).fill(undefined);
+
+heap.push(undefined, null, true, false);
+
+function getObject(idx) { return heap[idx]; }
+
+let heap_next = heap.length;
+
+function dropObject(idx) {
+    if (idx < 36) return;
+    heap[idx] = heap_next;
+    heap_next = idx;
+}
+
+function takeObject(idx) {
+    const ret = getObject(idx);
+    dropObject(idx);
+    return ret;
+}
+
 let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
 
 cachedTextDecoder.decode();
@@ -41,6 +61,14 @@ export function helloworld() {
     }
 }
 
+let stack_pointer = 32;
+
+function addBorrowedObject(obj) {
+    if (stack_pointer == 1) throw new Error('out of js stack');
+    heap[--stack_pointer] = obj;
+    return stack_pointer;
+}
+
 let cachegetFloat32Memory0 = null;
 function getFloat32Memory0() {
     if (cachegetFloat32Memory0 === null || cachegetFloat32Memory0.buffer !== wasm.memory.buffer) {
@@ -57,34 +85,55 @@ function passArrayF32ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
-
-function getArrayU8FromWasm0(ptr, len) {
-    return getUint8Memory0().subarray(ptr / 1, ptr / 1 + len);
-}
 /**
+* @param {CanvasRenderingContext2D} context
 * @param {number} width
 * @param {number} height
 * @param {Float32Array} pos
 * @param {Float32Array} pyr
-* @returns {Uint8Array}
 */
-export function render_func(width, height, pos, pyr) {
+export function render_func(context, width, height, pos, pyr) {
     try {
-        const retptr = wasm.__wbindgen_export_0.value - 16;
-        wasm.__wbindgen_export_0.value = retptr;
         var ptr0 = passArrayF32ToWasm0(pos, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
         var ptr1 = passArrayF32ToWasm0(pyr, wasm.__wbindgen_malloc);
         var len1 = WASM_VECTOR_LEN;
-        wasm.render_func(retptr, width, height, ptr0, len0, ptr1, len1);
-        var r0 = getInt32Memory0()[retptr / 4 + 0];
-        var r1 = getInt32Memory0()[retptr / 4 + 1];
-        var v2 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_free(r0, r1 * 1);
-        return v2;
+        wasm.render_func(addBorrowedObject(context), width, height, ptr0, len0, ptr1, len1);
     } finally {
-        wasm.__wbindgen_export_0.value += 16;
+        heap[stack_pointer++] = undefined;
     }
+}
+
+let cachegetUint8ClampedMemory0 = null;
+function getUint8ClampedMemory0() {
+    if (cachegetUint8ClampedMemory0 === null || cachegetUint8ClampedMemory0.buffer !== wasm.memory.buffer) {
+        cachegetUint8ClampedMemory0 = new Uint8ClampedArray(wasm.memory.buffer);
+    }
+    return cachegetUint8ClampedMemory0;
+}
+
+function getClampedArrayU8FromWasm0(ptr, len) {
+    return getUint8ClampedMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
+
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
+
+function handleError(f) {
+    return function () {
+        try {
+            return f.apply(this, arguments);
+
+        } catch (e) {
+            wasm.__wbindgen_exn_store(addHeapObject(e));
+        }
+    };
 }
 
 async function load(module, imports) {
@@ -128,6 +177,22 @@ async function init(input) {
     imports.wbg = {};
     imports.wbg.__wbg_log_592cc817529d8489 = function(arg0, arg1) {
         console.log(getStringFromWasm0(arg0, arg1));
+    };
+    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+        takeObject(arg0);
+    };
+    imports.wbg.__wbg_newwithu8clampedarrayandsh_77815f5702eff971 = handleError(function(arg0, arg1, arg2, arg3) {
+        var ret = new ImageData(getClampedArrayU8FromWasm0(arg0, arg1), arg2 >>> 0, arg3 >>> 0);
+        return addHeapObject(ret);
+    });
+    imports.wbg.__wbg_putImageData_831fef14e9e2b07f = handleError(function(arg0, arg1, arg2, arg3) {
+        getObject(arg0).putImageData(getObject(arg1), arg2, arg3);
+    });
+    imports.wbg.__wbindgen_throw = function(arg0, arg1) {
+        throw new Error(getStringFromWasm0(arg0, arg1));
+    };
+    imports.wbg.__wbindgen_rethrow = function(arg0) {
+        throw takeObject(arg0);
     };
 
     if (typeof input === 'string' || (typeof Request === 'function' && input instanceof Request) || (typeof URL === 'function' && input instanceof URL)) {

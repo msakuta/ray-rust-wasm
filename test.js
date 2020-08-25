@@ -17,21 +17,9 @@ async function run() {
 
   function renderCanvas(){
     console.time('Rendering in Rust')
-    const buf = render_func(canvasSize.width, canvasSize.height, [x, y, z],
+    const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
       [0., yaw, pitch].map(deg => deg * Math.PI / 180));
     console.timeEnd('Rendering in Rust')
-
-      // Iterate through every pixel
-    for (let i = 0; i < imageData.data.length / 4; i += 1) {
-      // Modify pixel data
-      imageData.data[4 * i + 0] = buf[3 * i + 0];  // R value
-      imageData.data[4 * i + 1] = buf[3 * i + 1];    // G value
-      imageData.data[4 * i + 2] = buf[3 * i + 2];  // B value
-      imageData.data[4 * i + 3] = 255;  // A value
-    }
-
-    // Draw image data to the canvas
-    ctx.putImageData(imageData, 0, 0);
   }
 
   var label = document.getElementById('label');
