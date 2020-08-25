@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use wasm_bindgen::prelude::*;
+use web_sys::CanvasRenderingContext2d;
 use render::{RenderColor,
     UVMap,
     RenderMaterial, RenderPattern,
@@ -34,7 +35,7 @@ pub fn helloworld() -> String {
 }
 
 #[wasm_bindgen]
-pub fn render_func(width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) -> Vec<u8> {
+pub fn render_func(context: &CanvasRenderingContext2d, width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) -> Result<(), JsValue> {
     let xmax = width;
     let ymax = height;
     let xfov = 1.;
@@ -113,20 +114,21 @@ pub fn render_func(width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) ->
         // else PointMandel(dir->x * 2., dir->z * 2., 32, ret);
     }
 
-    let mut data = vec![0u8; 3 * width * height];
+    let mut data = vec![0u8; 4 * width * height];
 
     for y in 0..height {
         for x in 0..width {
-            data[(x + y * width) * 3    ] = ((x) * 255 / width) as u8;
-            data[(x + y * width) * 3 + 1] = ((y) * 255 / height) as u8;
-            data[(x + y * width) * 3 + 2] = ((x + y) % 32 + 32) as u8;
+            data[(x + y * width) * 4    ] = ((x) * 255 / width) as u8;
+            data[(x + y * width) * 4 + 1] = ((y) * 255 / height) as u8;
+            data[(x + y * width) * 4 + 2] = ((x + y) % 32 + 32) as u8;
+            data[(x + y * width) * 4 + 3] = 255;
         }
     }
 
     let mut putpoint = |x: i32, y: i32, fc: &RenderColor| {
-        data[(x as usize + y as usize * width) * 3    ] = (fc.r * 255.).min(255.) as u8;
-        data[(x as usize + y as usize * width) * 3 + 1] = (fc.g * 255.).min(255.) as u8;
-        data[(x as usize + y as usize * width) * 3 + 2] = (fc.b * 255.).min(255.) as u8;
+        data[(x as usize + y as usize * width) * 4    ] = (fc.r * 255.).min(255.) as u8;
+        data[(x as usize + y as usize * width) * 4 + 1] = (fc.g * 255.).min(255.) as u8;
+        data[(x as usize + y as usize * width) * 4 + 2] = (fc.b * 255.).min(255.) as u8;
     };
 
     let mut ren: RenderEnv = RenderEnv::new(
@@ -160,5 +162,8 @@ pub fn render_func(width: usize, height: usize, pos: Vec<f32>, pyr: Vec<f32>) ->
 
     log(&format!("data: {}, {}", data[0], data.len()));
 
-    data
+    let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(wasm_bindgen::Clamped(&mut data), width as u32, height as u32)?;
+    context.put_image_data(&image_data, 0., 0.);
+
+    Ok(())
 }
