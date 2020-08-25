@@ -1,4 +1,4 @@
-import init, { render_func } from './helloworld.js'
+import init, { render_func } from './ray_rust_wasm.js'
 
 async function run() {
   await init()

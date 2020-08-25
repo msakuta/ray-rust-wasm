@@ -1,5 +1,5 @@
 [package]
-name = "helloworld"
+name = "ray-rust-wasm"
 version = "0.1.0"
 authors = ["Masahiro <masahiro.sakuta@zmp.co.jp>"]
 edition = "2018"
