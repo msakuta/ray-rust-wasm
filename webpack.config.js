@@ -2,6 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     entry: './index.js',
@@ -10,9 +11,12 @@ module.exports = {
         filename: 'index.js',
     },
     plugins: [
-        new HtmlWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: '"Hello world" in Rust + Webassembly'
+        }),
+        new CleanWebpackPlugin(),
         new WasmPackPlugin({
-            crateDirectory: path.resolve(__dirname, ".")
+            crateDirectory: path.resolve(__dirname, "."),
         }),
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.
@@ -21,5 +25,5 @@ module.exports = {
           TextEncoder: ['text-encoding', 'TextEncoder']
         })
     ],
-    mode: 'development'
+    mode: 'production'
 };
