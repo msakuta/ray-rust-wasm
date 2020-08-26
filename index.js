@@ -1,10 +1,17 @@
-import init, { render_func } from './ray_rust_wasm.js'
+const rust = import('./pkg');
 
+rust.then(m => {
 async function run() {
-  await init()
+  const { render_func } = m; //'./pkg/ray_rust_wasm.js'
 
-  const canvas = document.getElementById('canvas');
+  const canvas = document.createElement("canvas", {id: "canvas"});//getElementById('canvas');
+  canvas.setAttribute("width", 640);
+  canvas.setAttribute("height", 480);
+  document.body.appendChild(canvas);
   const canvasSize = canvas.getBoundingClientRect();
+
+  const label = document.createElement("div");
+  document.body.appendChild(label);
 
   var x = 0;
   var y = -150.;
@@ -22,7 +29,6 @@ async function run() {
     console.timeEnd('Rendering in Rust')
   }
 
-  var label = document.getElementById('label');
   var buttonStates = {
       w: false,
       s: false,
@@ -111,3 +117,4 @@ async function run() {
 }
 
 run()
+});
