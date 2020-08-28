@@ -302,8 +302,11 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
 
         // context.put_image_data(&image_data, 0., 0.);
 
-        callback.call1(&window(), &JsValue::from(image_data));
-    
+        let terminate_requested = callback.call1(&window(), &JsValue::from(image_data)).unwrap_or(JsValue::from(true));
+        if terminate_requested.is_truthy() {
+            return
+        }
+
         // Schedule ourself for another requestAnimationFrame callback.
         request_animation_frame(func.borrow().as_ref().unwrap());
 
