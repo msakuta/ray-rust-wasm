@@ -586,8 +586,14 @@ impl From<CameraSerial> for Camera{
 pub struct CameraKeyframe{
     pub camera: Camera,
     pub velocity: Vec3,
-    camera_target: Option<Vec3>,
+    _camera_target: Option<Vec3>,
     pub duration: f32,
+}
+
+impl CameraKeyframe{
+    pub fn camera_target(&self) -> Option<Vec3>{
+        self._camera_target
+    }
 }
 
 #[derive(Clone)]
@@ -714,7 +720,7 @@ impl RenderEnv{
             CameraKeyframe{
                 camera: Camera::from(o.camera),
                 velocity: o.velocity,
-                camera_target: o.camera_target,
+                _camera_target: o.camera_target,
                 duration: o.duration,
             }).collect());
         self.max_reflections = sceneobj.max_reflections;
@@ -841,7 +847,7 @@ fn hermite_interpolate_f32(t: f32, x0: f32, x1: f32, v0: f32, v1: f32) -> f32{
     a * t * t * t + b * t * t + c * t + d
 }
 
-fn hermite_interpolate(t: f32, x0: &Vec3, x1: &Vec3, v0: &Vec3, v1: &Vec3) -> Vec3{
+pub fn hermite_interpolate(t: f32, x0: &Vec3, x1: &Vec3, v0: &Vec3, v1: &Vec3) -> Vec3{
     Vec3::new(
         hermite_interpolate_f32(t, x0.x, x1.x, v0.x, v1.x),
         hermite_interpolate_f32(t, x0.y, x1.y, v0.y, v1.y),
@@ -865,7 +871,7 @@ pub fn render_frames(ren: &mut RenderEnv, width: usize, height: usize,
             println!("Rendering frame {} / {}, v0: {},{}", accum_frame, total_frames, v0.x, v0.y);
             ren.camera.position = hermite_interpolate(f, &prev_camera.position, &frame.camera.position,
                 &v0, &v1);
-            ren.camera.rotation = if let Some(target) = frame.camera_target {
+            ren.camera.rotation = if let Some(target) = frame._camera_target {
                 let delta = target - ren.camera.position;
                 let pitch = (delta.y).atan2((delta.x * delta.x + delta.z * delta.z).sqrt());
                 let yaw = -delta.z.atan2(delta.x);

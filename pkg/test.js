@@ -28,9 +28,7 @@ async function run() {
     // const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
     //   [0., yaw, pitch].map(deg => deg * Math.PI / 180));
     const buf = deserialize_string(yamlText, canvasSize.width, canvasSize.height,
-        // ctx,
         data => {
-            console.log(`data: ${data.length}`);
             ctx.putImageData(data, 0, 0)
         });
     console.timeEnd('Rendering in Rust')

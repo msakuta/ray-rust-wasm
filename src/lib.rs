@@ -17,8 +17,9 @@ use render::{RenderColor,
     RenderMaterial, RenderPattern,
     RenderObject, RenderSphere, RenderFloor,
     RenderEnv,
-    render, render_frames};
+    render, hermite_interpolate};
 use vec3::Vec3;
+use quat::Quat;
 
 mod render;
 mod vec3;
@@ -29,7 +30,13 @@ mod pixelutil;
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    unsafe fn log(s: &str);
+}
+
+macro_rules! console_log {
+    ($fmt:expr, $($arg1:expr),*) => {
+        log(&format!($fmt, $($arg1),+))
+    };
 }
 
 #[wasm_bindgen]
@@ -225,13 +232,24 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
         }
     }
 
-    let f = Rc::new(RefCell::new(None));
-    let g = f.clone();
+    let func = Rc::new(RefCell::new(None));
+    let g = func.clone();
 
-    let mut i = 0;
+    let mut prev_camera = ren.camera;
+    let mut prev_velocity = Vec3::zero();
+    let total_frames = ren.camera_motion.0.iter().fold(0., |acc, m| acc + m.duration);
+    let mut accum_frame = 0;
+    let frame_step = 0.5;
+    let mut i = 0.;
+    let mut frame_num = 0;
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        if i >= ren.camera_motion.0.len() {
-            i = i % ren.camera_motion.0.len();
+        i += frame_step;
+        let mut next_camera = None;
+        while i >= ren.camera_motion.0[frame_num].duration {
+            next_camera = Some((&ren.camera_motion.0[frame_num].camera, &ren.camera_motion.0[frame_num].velocity));
+            i -= ren.camera_motion.0[frame_num].duration;
+            frame_num = (frame_num + 1) % ren.camera_motion.0.len();
+            console_log!("keyframe switched: {}, i became {}", frame_num, i);
             // body().set_text_content(Some("All done!"));
 
             // Drop our handle to this closure so that it will get cleaned
@@ -239,15 +257,22 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
             // let _ = f.borrow_mut().take();
             // return;
         }
-        let motion = &ren.camera_motion.0[i];
+        let frame = &ren.camera_motion.0[frame_num];
+
+        // for (n, frame) in ren.camera_motion.0.iter().enumerate()
+        let v0 = prev_velocity;
+        let v1 = frame.velocity;
+        console_log!("keyframe {} / {}, v0: {},{},{}", frame_num, ren.camera_motion.0.len(), v0.x, v0.y, v0.z);
+        if i >= frame.duration {
+            return
+        }
+        let f = i as f32 / frame.duration;
+        console_log!("Rendering frame {} / {}, v0: {},{}", accum_frame, total_frames, v0.x, v0.y);
 
         // Set the body's text content to how many times this
         // requestAnimationFrame callback has fired.
-        i += 1;
-        let text = format!("requestAnimationFrame has been called {} times.", i);
+        let text = format!("time: {}, frame: {}", i, frame_num);
         document().get_element_by_id("label").unwrap().set_inner_html(&text);
-
-        log(&format!("  camera: {} {} {}", motion.camera.position.x, motion.camera.position.y, motion.camera.position.z));
 
         let mut putpoint = |x: i32, y: i32, fc: &RenderColor| {
             data[(x as usize + y as usize * width) * 4    ] = (fc.r * 255.).min(255.) as u8;
@@ -255,8 +280,20 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
             data[(x as usize + y as usize * width) * 4 + 2] = (fc.b * 255.).min(255.) as u8;
         };
 
-        ren.camera = motion.camera;
-    
+        ren.camera.position = hermite_interpolate(f, &prev_camera.position, &frame.camera.position,
+            &v0, &v1);
+        ren.camera.rotation = if let Some(target) = frame.camera_target() {
+            let delta = target - ren.camera.position;
+            let pitch = (delta.y).atan2((delta.x * delta.x + delta.z * delta.z).sqrt());
+            let yaw = -delta.z.atan2(delta.x);
+            Quat::rotation(yaw, 0., 1., 0.)
+            * Quat::rotation(pitch, 0., 0., 1.)
+            * Quat::rotation(-std::f32::consts::PI / 2., 1., 0., 0.)
+        }
+        else{
+            prev_camera.rotation.slerp(&frame.camera.rotation, f)
+        };
+
         render(&ren, &mut putpoint, 1);
 
         log(&format!("data: {}, {}", data[0], data.len()));
@@ -268,7 +305,12 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
         callback.call1(&window(), &JsValue::from(image_data));
     
         // Schedule ourself for another requestAnimationFrame callback.
-        request_animation_frame(f.borrow().as_ref().unwrap());
+        request_animation_frame(func.borrow().as_ref().unwrap());
+
+        if let Some((camera, velocity)) = next_camera {
+            prev_camera = *camera;
+            prev_velocity = *velocity;
+        }
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());
