@@ -1,4 +1,5 @@
 import init, { render_func } from './ray_rust_wasm.js'
+import { deserialize_string } from './ray_rust_wasm.js';
 
 async function run() {
   await init()
@@ -15,10 +16,23 @@ async function run() {
   const ctx = canvas.getContext('2d');
   const imageData = ctx.createImageData(canvasSize.width, canvasSize.height);
 
+  const yaml = await fetch("./out.yaml");
+
+  if (!yaml.ok || yaml.status !== 200)
+    return;
+
+  const yamlText = await yaml.text();
+
   function renderCanvas(){
     console.time('Rendering in Rust')
-    const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
-      [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    // const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
+    //   [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    const buf = deserialize_string(yamlText, canvasSize.width, canvasSize.height,
+        // ctx,
+        data => {
+            console.log(`data: ${data.length}`);
+            ctx.putImageData(data, 0, 0)
+        });
     console.timeEnd('Rendering in Rust')
   }
 
