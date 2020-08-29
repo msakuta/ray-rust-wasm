@@ -626,6 +626,7 @@ pub struct RenderEnv{
 struct Scene{
     camera: CameraSerial,
     camera_motion: CameraMotionSerial,
+    light: Vec3,
     max_reflections: i32,
     max_refractions: i32,
     materials: HashMap<String, RenderMaterialSerial>,
@@ -675,8 +676,12 @@ impl RenderEnv{
         self
     }
 
-    pub fn light(mut self, light: Vec3) -> Self{
+    fn set_light(&mut self, light: Vec3){
         self.light = light.normalized();
+    }
+
+    pub fn light(mut self, light: Vec3) -> Self{
+        self.set_light(light);
         self
     }
 
@@ -697,6 +702,7 @@ impl RenderEnv{
                 pyr: self.camera.pyr
             },
             camera_motion: CameraMotionSerial(vec![]),
+            light: self.light,
             max_reflections: MAX_REFLECTIONS,
             max_refractions: MAX_REFRACTIONS,
             materials: HashMap::new(),
@@ -716,6 +722,7 @@ impl RenderEnv{
         let mm: Result<HashMap<_, _>, DeserializeError> = sceneobj.materials.into_iter().map(
             |m| Ok((m.0, Arc::new(RenderMaterial::deserialize(&m.1)?)))).collect();
         self.camera = Camera::from(sceneobj.camera);
+        self.set_light(sceneobj.light);
         self.camera_motion = CameraMotion(sceneobj.camera_motion.0.iter().map(|o|
             CameraKeyframe{
                 camera: Camera::from(o.camera),

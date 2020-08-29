@@ -99,6 +99,10 @@ camera_motion:
       y: -150.0
       z: 0.0
     duration: 10
+light:
+  x: 50.
+  y: 60.
+  z: -50.
 max_reflections: 10
 max_refractions: 10
 materials:
