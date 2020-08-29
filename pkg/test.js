@@ -29,19 +29,29 @@ async function run() {
     if(animateCheckbox.checked)
         return;
     console.time('Rendering in Rust')
-    const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
-      [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    try{
+      const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
+        [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    }
+    catch(e){
+      console.log("Rendering error: " + e);
+    }
     console.timeEnd('Rendering in Rust')
   }
 
   function startAnimation(){
     console.time('Rendering in Rust')
-    deserialize_string(yamlText, canvasSize.width, canvasSize.height,
+    try{
+      deserialize_string(yamlText, canvasSize.width, canvasSize.height,
         data => {
             ctx.putImageData(data, 0, 0);
             const animateCheckbox = document.getElementById("animate");
             return !animateCheckbox.checked;
         });
+    }
+    catch(e){
+        console.log("Rendering error: " + e);
+    }
     console.timeEnd('Rendering in Rust')
   }
 
