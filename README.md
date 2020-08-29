@@ -29,6 +29,12 @@ Serve the web server
 
 Browse http://localhost:5000/
 
+## Controls
+
+You can use WASDQZ keys to move around the world and arrow keys to rotate the camera.
+
+Also, you can click on the Animate checkbox to enable animation with predefined path.
+
 ## Screenshots
 
 ![screenshot](images/screenshot00.jpg)

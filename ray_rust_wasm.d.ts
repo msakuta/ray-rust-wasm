@@ -12,6 +12,13 @@ export function helloworld(): string;
 * @param {Float32Array} pyr
 */
 export function render_func(context: CanvasRenderingContext2D, width: number, height: number, pos: Float32Array, pyr: Float32Array): void;
+/**
+* @param {string} save_data
+* @param {number} width
+* @param {number} height
+* @param {Function} callback
+*/
+export function deserialize_string(save_data: string, width: number, height: number, callback: Function): void;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -19,8 +26,12 @@ export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly helloworld: (a: number) => void;
   readonly render_func: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
-  readonly __wbindgen_free: (a: number, b: number) => void;
+  readonly deserialize_string: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly __wbindgen_malloc: (a: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
+  readonly __wbindgen_export_2: WebAssembly.Table;
+  readonly wasm_bindgen__convert__closures__invoke0_mut__h2f78d711c36c00e3: (a: number, b: number) => void;
+  readonly __wbindgen_free: (a: number, b: number) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
 }
 
