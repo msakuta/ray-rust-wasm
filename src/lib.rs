@@ -214,7 +214,6 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
         ymax as i32, /* xres, yres */
         xfov,
         yfov, /* xfov, yfov*/
-        //pointproc: putpoint, /* pointproc */
         bgcolor, /* bgproc */
     );
     ren.deserialize(&save_data).map_err(|e| JsValue::from(
@@ -250,27 +249,21 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
             i -= ren.camera_motion.0[frame_num].duration;
             frame_num = (frame_num + 1) % ren.camera_motion.0.len();
             console_log!("keyframe switched: {}, i became {}", frame_num, i);
-            // body().set_text_content(Some("All done!"));
-
-            // Drop our handle to this closure so that it will get cleaned
-            // up once we return.
-            // let _ = f.borrow_mut().take();
-            // return;
         }
         let frame = &ren.camera_motion.0[frame_num];
 
-        // for (n, frame) in ren.camera_motion.0.iter().enumerate()
         let v0 = prev_velocity;
         let v1 = frame.velocity;
         console_log!("keyframe {} / {}, v0: {},{},{}", frame_num, ren.camera_motion.0.len(), v0.x, v0.y, v0.z);
         if i >= frame.duration {
+            // Drop our handle to this closure so that it will get cleaned
+            // up once we return.
+            let _ = func.borrow_mut().take();
             return
         }
         let f = i as f32 / frame.duration;
         console_log!("Rendering frame {} / {}, v0: {},{}", accum_frame, total_frames, v0.x, v0.y);
 
-        // Set the body's text content to how many times this
-        // requestAnimationFrame callback has fired.
         let text = format!("time: {}, frame: {}", i, frame_num);
         document().get_element_by_id("label").unwrap().set_inner_html(&text);
 
@@ -296,11 +289,7 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
 
         render(&ren, &mut putpoint, 1);
 
-        log(&format!("data: {}, {}", data[0], data.len()));
-
         let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(wasm_bindgen::Clamped(&mut data), width as u32, height as u32).unwrap();
-
-        // context.put_image_data(&image_data, 0., 0.);
 
         let terminate_requested = callback.call1(&window(), &JsValue::from(image_data)).unwrap_or(JsValue::from(true));
         if terminate_requested.is_truthy() {
@@ -313,33 +302,6 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
 
     request_animation_frame(g.borrow().as_ref().unwrap());
 
-    // request_animation_frame(g.borrow().as_ref().unwrap());
-    // for motion in &ren.camera_motion.0 {
-    //     log(&format!("  camera: {} {} {}", motion.camera.position.x, motion.camera.position.y, motion.camera.position.z));
-
-    //     let mut putpoint = |x: i32, y: i32, fc: &RenderColor| {
-    //         data[(x as usize + y as usize * width) * 4    ] = (fc.r * 255.).min(255.) as u8;
-    //         data[(x as usize + y as usize * width) * 4 + 1] = (fc.g * 255.).min(255.) as u8;
-    //         data[(x as usize + y as usize * width) * 4 + 2] = (fc.b * 255.).min(255.) as u8;
-    //     };
-
-    //     ren.camera = motion.camera;
-    
-    //     render(&ren, &mut putpoint, 1);
-
-    //     log(&format!("data: {}, {}", data[0], data.len()));
-    
-    //     let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(wasm_bindgen::Clamped(&mut data), width as u32, height as u32)?;
-
-    //     rendered.call1(&JsValue::from(web_sys::window()), &JsValue::from(image_data));
-    // }
-    // println!("deserialized {} materials and {} objects", ren.materials.len(), ren.objects.len());
-    // for material in ren.materials.iter() {
-    //     println!("  {:?}", material);
-    // }
-    // for (i, object) in ren.objects.iter().enumerate() {
-    //     println!("  [{}]: {}", i, object.get_interface().get_material().get_name());
-    // }
     Ok(())
 }
 
