@@ -244,9 +244,9 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
     let mut frame_num = 0;
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         i += frame_step;
-        let mut next_camera = None;
         while i >= ren.camera_motion.0[frame_num].duration {
-            next_camera = Some((&ren.camera_motion.0[frame_num].camera, &ren.camera_motion.0[frame_num].velocity));
+            prev_camera = ren.camera_motion.0[frame_num].camera;
+            prev_velocity = ren.camera_motion.0[frame_num].velocity;
             i -= ren.camera_motion.0[frame_num].duration;
             frame_num = (frame_num + 1) % ren.camera_motion.0.len();
             console_log!("keyframe switched: {}, i became {}", frame_num, i);
@@ -309,11 +309,6 @@ pub fn deserialize_string(save_data: &str, width: usize, height: usize, callback
 
         // Schedule ourself for another requestAnimationFrame callback.
         request_animation_frame(func.borrow().as_ref().unwrap());
-
-        if let Some((camera, velocity)) = next_camera {
-            prev_camera = *camera;
-            prev_velocity = *velocity;
-        }
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());
