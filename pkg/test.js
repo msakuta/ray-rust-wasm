@@ -1,4 +1,5 @@
 import init, { render_func } from './ray_rust_wasm.js'
+import { deserialize_string } from './ray_rust_wasm.js';
 
 async function run() {
   await init()
@@ -15,11 +16,48 @@ async function run() {
   const ctx = canvas.getContext('2d');
   const imageData = ctx.createImageData(canvasSize.width, canvasSize.height);
 
+  const yaml = await fetch("./out.yaml");
+
+  if (!yaml.ok || yaml.status !== 200)
+    return;
+
+  const yamlText = await yaml.text();
+
+  const animateCheckbox = document.getElementById("animate");
+
   function renderCanvas(){
+    if(animateCheckbox.checked)
+        return;
     console.time('Rendering in Rust')
-    const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
-      [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    try{
+      const buf = render_func(ctx, canvasSize.width, canvasSize.height, [x, y, z],
+        [0., yaw, pitch].map(deg => deg * Math.PI / 180));
+    }
+    catch(e){
+      console.log("Rendering error: " + e);
+    }
     console.timeEnd('Rendering in Rust')
+  }
+
+  function startAnimation(){
+    console.time('Rendering in Rust')
+    try{
+      deserialize_string(yamlText, canvasSize.width, canvasSize.height,
+        data => {
+            ctx.putImageData(data, 0, 0);
+            const animateCheckbox = document.getElementById("animate");
+            return !animateCheckbox.checked;
+        });
+    }
+    catch(e){
+        console.log("Rendering error: " + e);
+    }
+    console.timeEnd('Rendering in Rust')
+  }
+
+  animateCheckbox.onclick = (_event) => {
+      if(animateCheckbox.checked)
+        startAnimation();
   }
 
   var label = document.getElementById('label');

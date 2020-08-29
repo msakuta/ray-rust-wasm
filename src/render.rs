@@ -586,8 +586,14 @@ impl From<CameraSerial> for Camera{
 pub struct CameraKeyframe{
     pub camera: Camera,
     pub velocity: Vec3,
-    camera_target: Option<Vec3>,
+    _camera_target: Option<Vec3>,
     pub duration: f32,
+}
+
+impl CameraKeyframe{
+    pub fn camera_target(&self) -> Option<Vec3>{
+        self._camera_target
+    }
 }
 
 #[derive(Clone)]
@@ -620,6 +626,7 @@ pub struct RenderEnv{
 struct Scene{
     camera: CameraSerial,
     camera_motion: CameraMotionSerial,
+    light: Vec3,
     max_reflections: i32,
     max_refractions: i32,
     materials: HashMap<String, RenderMaterialSerial>,
@@ -669,8 +676,12 @@ impl RenderEnv{
         self
     }
 
-    pub fn light(mut self, light: Vec3) -> Self{
+    fn set_light(&mut self, light: Vec3){
         self.light = light.normalized();
+    }
+
+    pub fn light(mut self, light: Vec3) -> Self{
+        self.set_light(light);
         self
     }
 
@@ -691,6 +702,7 @@ impl RenderEnv{
                 pyr: self.camera.pyr
             },
             camera_motion: CameraMotionSerial(vec![]),
+            light: self.light,
             max_reflections: MAX_REFLECTIONS,
             max_refractions: MAX_REFRACTIONS,
             materials: HashMap::new(),
@@ -710,11 +722,12 @@ impl RenderEnv{
         let mm: Result<HashMap<_, _>, DeserializeError> = sceneobj.materials.into_iter().map(
             |m| Ok((m.0, Arc::new(RenderMaterial::deserialize(&m.1)?)))).collect();
         self.camera = Camera::from(sceneobj.camera);
+        self.set_light(sceneobj.light);
         self.camera_motion = CameraMotion(sceneobj.camera_motion.0.iter().map(|o|
             CameraKeyframe{
                 camera: Camera::from(o.camera),
                 velocity: o.velocity,
-                camera_target: o.camera_target,
+                _camera_target: o.camera_target,
                 duration: o.duration,
             }).collect());
         self.max_reflections = sceneobj.max_reflections;
@@ -763,65 +776,12 @@ pub fn render(ren: &RenderEnv, pointproc: &mut impl FnMut(i32, i32, &RenderColor
         }
     }
     else{
-        use std::sync::atomic::{AtomicI32, Ordering};
-        type WorkerResult = Result<(), mpsc::SendError<(i32, Vec<RenderColor>)>>;
-        let scanlines = (ren.yres + thread_count - 1) / thread_count;
-        println!("Splitting into {} scanlines; {} threads", scanlines, thread_count);
+        println!("Splitting scanlines; {} threads", thread_count);
         for m_y in 0..ren.yres {
-            // let iyy = m_y.fetch_add(1, Ordering::SeqCst);
-            // if ren.yres <= iyy { break }
-            // let mut linebuf = vec![RenderColor::zero(); ren.xres as usize];
             process_line(m_y, &mut |ix: i32, _iy: i32, col: RenderColor| {
-                // linebuf[ix as usize] = col;
                 pointproc(ix, _iy, &col);
             });
         }
-        // crossbeam::scope(|scope| {
-        //     let counter = Arc::new(AtomicI32::new(0));
-        //     let (tx, rx) = mpsc::channel();
-        //     let handles: Vec<crossbeam::thread::ScopedJoinHandle<'_, WorkerResult>> = (0..thread_count).map(|_| {
-        //         let tx1 = mpsc::Sender::clone(&tx);
-        //         let m_y = counter.clone();
-        //         scope.spawn(move |_| -> WorkerResult {
-        //             loop {
-        //                 let iyy = m_y.fetch_add(1, Ordering::SeqCst);
-        //                 if ren.yres <= iyy { break }
-        //                 let mut linebuf = vec![RenderColor::zero(); ren.xres as usize];
-        //                 process_line(iyy, &mut |ix: i32, _iy: i32, col: RenderColor| {
-        //                     linebuf[ix as usize] = col;
-        //                 });
-        //                 tx1.send((iyy, linebuf))?;
-        //             }
-
-        //             tx1.send((-1, vec![]))?;
-        //             Ok(())
-        //         })
-        //     }).collect();
-
-        //     let mut done_threads = 0;
-        //     for (iy, pixels) in rx {
-        //         // println!("received {} {}", iy, pixels.len());
-        //         if iy == -1 {
-        //             done_threads += 1;
-        //             if done_threads == thread_count { break }
-        //         };
-        //         for (ix,c) in pixels.iter().enumerate() {
-        //             let x = ix % ren.xres as usize;
-        //             let y = iy as usize + ix / ren.xres as usize * thread_count as usize;
-        //             if y < ren.yres as usize {
-        //                 pointproc(x as i32, y as i32, &c);
-        //             }
-        //         }
-        //     }
-
-        //     for (_iy,h) in handles.into_iter().enumerate() {
-        //         if h.join().is_ok() {
-        //         }
-        //         else {
-        //             println!("Join failed");
-        //         }
-        //     }
-        // }).expect("Worker thread join failed");
     }
 }
 
@@ -841,7 +801,7 @@ fn hermite_interpolate_f32(t: f32, x0: f32, x1: f32, v0: f32, v1: f32) -> f32{
     a * t * t * t + b * t * t + c * t + d
 }
 
-fn hermite_interpolate(t: f32, x0: &Vec3, x1: &Vec3, v0: &Vec3, v1: &Vec3) -> Vec3{
+pub fn hermite_interpolate(t: f32, x0: &Vec3, x1: &Vec3, v0: &Vec3, v1: &Vec3) -> Vec3{
     Vec3::new(
         hermite_interpolate_f32(t, x0.x, x1.x, v0.x, v1.x),
         hermite_interpolate_f32(t, x0.y, x1.y, v0.y, v1.y),
@@ -865,7 +825,7 @@ pub fn render_frames(ren: &mut RenderEnv, width: usize, height: usize,
             println!("Rendering frame {} / {}, v0: {},{}", accum_frame, total_frames, v0.x, v0.y);
             ren.camera.position = hermite_interpolate(f, &prev_camera.position, &frame.camera.position,
                 &v0, &v1);
-            ren.camera.rotation = if let Some(target) = frame.camera_target {
+            ren.camera.rotation = if let Some(target) = frame._camera_target {
                 let delta = target - ren.camera.position;
                 let pitch = (delta.y).atan2((delta.x * delta.x + delta.z * delta.z).sqrt());
                 let yaw = -delta.z.atan2(delta.x);
